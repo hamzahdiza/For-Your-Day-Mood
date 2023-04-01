@@ -5,5 +5,6 @@ const { authentication } = require("../middleware/auth");
 
 router.use(authentication);
 router.post("/check-weather", mainController.generateWeather);
+router.post("/get-answer-ai", mainController.generateAnswer);
 
 module.exports = router;
