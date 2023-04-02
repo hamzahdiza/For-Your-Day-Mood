@@ -36,11 +36,11 @@ class mainController {
       const response = await openai.createCompletion({
         model: "text-davinci-003",
         prompt: `suggest 1 song search query based on ${query} weather conditions in 3 words without the word "playlist" and only the song title`,
-        temperature: 0.1,
+        temperature: 0.8,
         max_tokens: 50,
         top_p: 1,
-        frequency_penalty: 1,
-        presence_penalty: 1,
+        frequency_penalty: 2,
+        presence_penalty: 2,
       });
       console.log(response.data.choices[0]);
       const resultAi = response.data.choices[0].text.trim().replaceAll('"', "");
@@ -78,8 +78,31 @@ class mainController {
   static async getPlaylist(req, res, next) {
     try {
       let token = await mainController.generateToken();
-      res.status(200).json({ token });
-      // console.log(token);
+      let { query } = req.body;
+      console.log(query);
+      let getDataPlaylist = await axios({
+        method: "get",
+        url: `https://api.spotify.com/v1/search?q=${query}&type=playlist`,
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      });
+      // console.log(getDataPlaylist.data.playlists);
+      let dataPlaylist = getDataPlaylist.data.playlists;
+      let dataResult = dataPlaylist.items.map((el) => {
+        let data_playlist = {
+          name_playlist: el.name,
+          link_main_playlist: el.external_urls.spotify,
+          image_playlist: el.images[0].url,
+          owner_name_playlist: el.owner.display_name,
+          link_tracks_playlist: el.tracks.href,
+          total_tracks_playlist: el.tracks.total,
+        };
+        return data_playlist;
+      });
+
+      res.status(200).json(dataResult);
     } catch (err) {
       console.log(err);
       next(err);
