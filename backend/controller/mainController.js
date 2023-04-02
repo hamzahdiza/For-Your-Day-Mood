@@ -35,7 +35,7 @@ class mainController {
       const openai = new OpenAIApi(configuration);
       const response = await openai.createCompletion({
         model: "text-davinci-003",
-        prompt: `suggest 1 music search query for ${query} weather condition in 3 words without the word "playlist" and "scattered" and some creative twist`,
+        prompt: `suggest 1 song search query based on ${query} weather conditions in 3 words without the word "playlist" and only the song title`,
         temperature: 0.1,
         max_tokens: 50,
         top_p: 1,
@@ -46,6 +46,40 @@ class mainController {
       const resultAi = response.data.choices[0].text.trim().replaceAll('"', "");
 
       res.status(200).json({ message: resultAi });
+    } catch (err) {
+      console.log(err);
+      next(err);
+    }
+  }
+
+  static async generateToken() {
+    try {
+      let client_id = process.env.SPOTIFY_V2_CLIENT_ID;
+      let client_secret = process.env.SPOTIFY_V2_CLIENT_SECRET;
+
+      let { data } = await axios({
+        method: "POST",
+        url: "https://accounts.spotify.com/api/token",
+        headers: {
+          Authorization: "Basic " + new Buffer.from(client_id + ":" + client_secret).toString("base64"),
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        data: {
+          grant_type: "client_credentials",
+        },
+      });
+
+      return data.access_token;
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  static async getPlaylist(req, res, next) {
+    try {
+      let token = await mainController.generateToken();
+      res.status(200).json({ token });
+      // console.log(token);
     } catch (err) {
       console.log(err);
       next(err);
