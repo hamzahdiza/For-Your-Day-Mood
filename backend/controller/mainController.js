@@ -108,6 +108,15 @@ class mainController {
       next(err);
     }
   }
+
+  static async getTrack(req, res, next) {
+    try {
+      //
+    } catch (err) {
+      console.log(err);
+      next(err);
+    }
+  }
 }
 // dd
 
