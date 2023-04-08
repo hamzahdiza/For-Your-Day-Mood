@@ -111,7 +111,32 @@ class mainController {
 
   static async getTrack(req, res, next) {
     try {
-      //
+      let token = await mainController.generateToken();
+      let { track_url } = req.body;
+      console.log(track_url);
+      let getDataTracks = await axios({
+        method: "get",
+        url: track_url,
+        headers: {
+          Authorization: "Bearer " + token,
+          "Content-Type": "application/json",
+        },
+      });
+      // console.log(getDataTracks.data);
+      let dataTracks = getDataTracks.data;
+
+      let randomStart = Math.floor(Math.random() * (dataTracks.items.length - 5));
+      let randomEnd = randomStart + 5;
+      console.log(randomStart, randomEnd);
+      let dataResult = dataTracks.items.slice(randomStart, randomEnd).map((el) => {
+        let data_tracks = {
+          name_track: el.track.name,
+          link_track: el.track.external_urls.spotify,
+        };
+        return data_tracks;
+      });
+
+      res.status(200).json(dataResult);
     } catch (err) {
       console.log(err);
       next(err);
