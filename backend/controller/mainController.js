@@ -130,8 +130,15 @@ class mainController {
       console.log(randomStart, randomEnd);
       let dataResult = dataTracks.items.slice(randomStart, randomEnd).map((el) => {
         let data_tracks = {
+          id_track: el.track.id,
           name_track: el.track.name,
           link_track: el.track.external_urls.spotify,
+          preview_url_track: el.track.preview_url,
+          album_name_track: el.track.album.name,
+          album_external_url_track: el.track.album.external_urls.spotify,
+          album_image_track: el.track.album.images[0].url,
+          artist_name_track: el.track.artists[0].name,
+          artists_link_track: el.track.artists[0].external_urls.spotify,
         };
         return data_tracks;
       });
