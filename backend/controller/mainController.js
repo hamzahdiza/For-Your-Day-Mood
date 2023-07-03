@@ -1,17 +1,24 @@
 const axios = require("axios");
 const { Configuration, OpenAIApi } = require("openai");
+const { News, Entertainment } = require("../models/index");
+const { Op } = require("sequelize");
 
 class mainController {
   static async generateWeather(req, res, next) {
     try {
       const weather_api_key = process.env.WHEATHER_API_KEY;
-      const latitude = "-6.244562414649453";
-      const longitude = "107.06565314837844";
+      // const latitude = "42.018049656337844";
+      // const longitude = "63.99898730787889";
+
+      const latitude = "-6.228298662587586";
+      const longitude = "106.77075024891396";
 
       let { data } = await axios({
         method: "get",
         url: `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${weather_api_key}&units=metric`,
       });
+
+      // console.log(data.name, data.weather, data.main.temp, "<<<<<<<<<");
 
       res.status(200).json({
         nearest_station: data.name,
@@ -27,6 +34,9 @@ class mainController {
   static async generateAnswer(req, res, next) {
     try {
       let { query } = req.body;
+      console.log(query, "req body <<<");
+      let queryData = query.weather[0].description;
+      // let queryData = query;
 
       const configuration = new Configuration({
         apiKey: process.env.OPENAI_API_KEY,
@@ -35,14 +45,14 @@ class mainController {
       const openai = new OpenAIApi(configuration);
       const response = await openai.createCompletion({
         model: "text-davinci-003",
-        prompt: `suggest 1 song search query based on ${query} weather conditions in 3 words without the word "playlist" and only the song title`,
+        prompt: `suggest 1 song search query based on ${queryData} weather conditions in 3 words without the word "playlist" and only the song title`,
         temperature: 0.8,
         max_tokens: 50,
         top_p: 1,
         frequency_penalty: 2,
         presence_penalty: 2,
       });
-      console.log(response.data.choices[0]);
+      // console.log(response.data.choices[0]);
       const resultAi = response.data.choices[0].text.trim().replaceAll('"', "");
 
       res.status(200).json({ message: resultAi });
@@ -79,10 +89,10 @@ class mainController {
     try {
       let token = await mainController.generateToken();
       let { query } = req.body;
-      console.log(query);
+      // console.log(query);
       let getDataPlaylist = await axios({
         method: "get",
-        url: `https://api.spotify.com/v1/search?q=${query}&type=playlist`,
+        url: `https://api.spotify.com/v1/search?q=${query.message}&type=playlist`,
         headers: {
           Authorization: "Bearer " + token,
           "Content-Type": "application/json",
@@ -126,9 +136,9 @@ class mainController {
       let dataTracks = getDataTracks.data;
 
       let randomStart = Math.floor(Math.random() * (dataTracks.items.length - 5));
-      let randomEnd = randomStart + 5;
+      let randomEnd = randomStart + 10;
       console.log(randomStart, randomEnd);
-      let dataResult = dataTracks.items.slice(randomStart, randomEnd).map((el) => {
+      let dataResult = dataTracks.items.slice(0, dataTracks.items.length - 1).map((el) => {
         let data_tracks = {
           id_track: el.track.id,
           name_track: el.track.name,
@@ -149,7 +159,79 @@ class mainController {
       next(err);
     }
   }
+
+  static async getNewsMusic(req, res, next) {
+    const { offset, limit } = req.query;
+    try {
+      let newsData = await News.findAll({ offset: offset, limit: limit });
+
+      res.status(200).json(newsData);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  static async getNewsEntertainment(req, res, next) {
+    const { offset, limit } = req.query;
+    console.log("Masuk nih Boss");
+    try {
+      let newsData = await Entertainment.findAll({ offset: offset, limit: limit });
+
+      res.status(200).json(newsData);
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  shuffle(array) {
+    let currentIndex = array.length,
+      temporaryValue,
+      randomIndex;
+
+    while (0 !== currentIndex) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+
+      temporaryValue = array[currentIndex];
+      array[currentIndex] = array[randomIndex];
+      array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+  }
+
+  static async searchNews(req, res, next) {
+    const { query } = req.body;
+
+    console.log(query, "QQQQQQQQQQQQq");
+
+    try {
+      let newsResults = await News.findAll({
+        where: {
+          title: {
+            [Op.iLike]: "%" + query + "%",
+          },
+        },
+      });
+
+      let entertainmentResults = await Entertainment.findAll({
+        where: {
+          title: {
+            [Op.iLike]: "%" + query + "%",
+          },
+        },
+      });
+
+      let dataSearch = await newsResults.concat(entertainmentResults);
+
+      res.status(200).json({
+        dataSearch: dataSearch,
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ error: err });
+    }
+  }
 }
-// dd
 
 module.exports = mainController;
