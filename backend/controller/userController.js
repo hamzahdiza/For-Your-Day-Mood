@@ -1,6 +1,7 @@
 const { User } = require("../models/index");
 const { comparePass } = require("../helpers/bcrypt");
-const { encodeToken } = require("../helpers/jwt");
+const { encodeToken, decodeToken, encodeTokenAccessToken } = require("../helpers/jwt");
+const jwt = require("jsonwebtoken");
 
 class userController {
   static async register(req, res, next) {
@@ -44,15 +45,36 @@ class userController {
       }
 
       let comparePassword = await comparePass(password, userLogin.password);
-      if (!comparePass) {
+      if (!comparePassword) {
         throw { name: "invalid-login" };
       }
 
-      let access_token = encodeToken({ id: userLogin.id });
+      let token = encodeToken({ id: userLogin.id });
 
       let sendUsername = userLogin.username;
 
-      res.status(200).json({ access_token, sendUsername });
+      res.status(200).json({ token, sendUsername });
+    } catch (err) {
+      console.log(err);
+      next(err);
+    }
+  }
+
+  static async token(req, res, next) {
+    try {
+      const { token } = req.body;
+      console.log(token, "LLLLLLL");
+
+      if (!token) {
+        throw { name: "invalid-token" };
+      }
+
+      const dataToken = decodeToken(token);
+
+      console.log(dataToken, "dataToken<<<<<<<<<<<<<<<<<<<<<<s");
+
+      const access_token = encodeTokenAccessToken({ id: dataToken.id });
+      res.status(200).json({ access_token: access_token });
     } catch (err) {
       console.log(err);
       next(err);

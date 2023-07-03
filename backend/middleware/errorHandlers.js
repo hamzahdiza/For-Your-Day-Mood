@@ -19,6 +19,8 @@ function errorHandler(err, req, res, next) {
     res.status(401).json({ message: "Email/Password Invalid" });
   } else if (err.name === "invalid-token" || err.name === "JsonWebTokenError") {
     res.status(401).json({ message: "Invalid Token" });
+  } else if (err.name === "token_expired") {
+    res.status(403).json({ message: "accessTokenExpired" });
   } else {
     res.status(500).json({
       message: "Fixing 500 Internal Server Error Problems on Your Own Site",

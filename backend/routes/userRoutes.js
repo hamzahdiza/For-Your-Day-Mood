@@ -4,5 +4,6 @@ const router = express();
 
 router.post("/register", userController.register);
 router.post("/login", userController.login);
+router.post("/token", userController.token);
 
 module.exports = router;
